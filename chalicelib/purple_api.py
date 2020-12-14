@@ -5,8 +5,7 @@ from .settings import (PURPLE_AIR_API, PURPLE_AIR_API_KEY,
 from .utils import address_converter
 
 def run():
-    url = f"{PURPLE_AIR_API}/sensors?api_key={PURPLE_AIR_API_KEY}&fields=name,location_type,latitude,longitude,altitude,humidity,temperature,pressure,voc,ozone1,analog_input"
-    response = requests.get(url)
+    response = get_purple_air_sensors()
     fields = []
     data = []
     if response.ok:
@@ -28,7 +27,7 @@ def run():
     nodes = get_sensors_africa_nodes()
     locations = get_sensors_africa_locations()
     
-    for sensor in sensors:
+    for sensor in sensors[:10]:
         if sensor['sensor_index'] not in nodes:
             lat_log = f"{round(sensor['latitude'], 3)}, {round(sensor['longitude'], 3)}"
             address = address_converter(lat_log)
@@ -47,6 +46,14 @@ def run():
                                 "postalcode": address.get('postcode'),
                                 })
             create_node(node={"uid": sensor['sensor_index'], 'owner': OWNER_ID, 'location': location})
+
+            # Create sensor-type
+            sensor_type = create_sensor_type(sensor['sensor_index'])
+
+def get_purple_air_sensors():
+    url = f"{PURPLE_AIR_API}/sensors?api_key={PURPLE_AIR_API_KEY}&fields=name,location_type,latitude,longitude,altitude,humidity,temperature,pressure,voc,ozone1,analog_input"
+    response = requests.get(url)
+    return response
 
 def get_sensors_africa_nodes():
     response = requests.get(f"{SENSORS_AFRICA_API}/nodes/")
@@ -67,11 +74,16 @@ def get_sensors_africa_locations():
         return formated_response
     return []
 
+def get_purple_air_sensor(sensor_id):
+    url = f"{PURPLE_AIR_API}/sensors/{sensor_id}?api_key={PURPLE_AIR_API_KEY}"
+    response = requests.get(url)
+    if response.ok:
+        return response.json()['sensor']
+
 def create_node(node):
     response = requests.post(f"{SENSORS_AFRICA_API}/nodes/",
     data=node,
     headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
-    return
 
 def create_location(location):
     response = requests.post(f"{SENSORS_AFRICA_API}/locations/",
@@ -79,3 +91,15 @@ def create_location(location):
     headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
     if response.ok:
         return response.json()['id']
+    else:
+        raise Exception(response.json())
+
+def create_sensor_type(sensor_id):
+    sensor = get_purple_air_sensor(sensor_id)
+    if sensor:
+        data = {"uid": sensor['model'], "name": sensor['model'], "manufacturer": "Purple Air"}
+        response = requests.post(f"{SENSORS_AFRICA_API}/sensor-types/",
+        data=data,
+        headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
+        if response.ok:
+            return response.json()['id']
