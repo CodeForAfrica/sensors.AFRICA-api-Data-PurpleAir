@@ -26,25 +26,45 @@ def run():
         sensors[index] = dict(zip(fields, row_data))
     
     nodes = get_sensors_africa_nodes()
+    locations = get_sensors_africa_locations()
+    
     for sensor in sensors:
         if sensor['sensor_index'] not in nodes:
-            # Create Location
-            address = address_converter(sensor['longitude'], sensor['latitude'])
-            location = create_location({"location": address['display_name'],
-                            "longitude": sensor.get('longitude'),
-                            "latitude": sensor.get('latitude'),
-                            "altitude": sensor.get('altitude'),
-                            "country": address.get('country'),
-                            "postalcode": address.get('postcode'),
-                            })
+            lat_log = f"{round(sensor['latitude'], 3)}, {round(sensor['longitude'], 3)}"
+            address = address_converter(lat_log)
+
+            location = [loc.get(lat_log) for loc in locations if loc.get(lat_log)]
+            
             if location:
-                # Create the Node
-                create_node(node={"uid": sensor['sensor_index'], 'owner': OWNER_ID, 'location': location})
+                location = location[0]
+            else:
+                # Create Location
+                location = create_location({"location": address['display_name'],
+                                "longitude": sensor.get('longitude'),
+                                "latitude": sensor.get('latitude'),
+                                "altitude": sensor.get('altitude'),
+                                "country": address.get('country'),
+                                "postalcode": address.get('postcode'),
+                                })
+            create_node(node={"uid": sensor['sensor_index'], 'owner': OWNER_ID, 'location': location})
 
 def get_sensors_africa_nodes():
     response = requests.get(f"{SENSORS_AFRICA_API}/nodes/")
     if response.ok:
         return [res['node']['uid'] for res in response.json()]
+    return []
+
+def get_sensors_africa_locations():
+    response = requests.get(f"{SENSORS_AFRICA_API}/locations/", headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
+    if response.ok:
+        """
+            Using latitude, longitude as a key and location id as value to help us find already existing location latter without having to ping the server
+            Using round ensures latitude, longitude value will be the same as lat_log in the run method.
+        """
+        formated_response = [{f"{round(float(location['latitude']), 3)}, {round(float(location['longitude']), 3)}":
+                            f"{location['id']}"} for location in response.json()]
+
+        return formated_response
     return []
 
 def create_node(node):
