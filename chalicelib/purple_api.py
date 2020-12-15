@@ -26,9 +26,9 @@ def run():
     
     nodes = get_sensors_africa_nodes()
     locations = get_sensors_africa_locations()
-    
+    sensor_types = get_sensors_africa_sensor_types()
     for sensor in sensors[:10]:
-        if sensor['sensor_index'] not in nodes:
+        if sensor['sensor_index'] not in [node['uid'] for node in nodes]:
             lat_log = f"{round(sensor['latitude'], 3)}, {round(sensor['longitude'], 3)}"
             address = address_converter(lat_log)
 
@@ -45,10 +45,20 @@ def run():
                                 "country": address.get('country'),
                                 "postalcode": address.get('postcode'),
                                 })
-            create_node(node={"uid": sensor['sensor_index'], 'owner': OWNER_ID, 'location': location})
+            node_id = [node.get('uid') for node in nodes if node.get('uid') == str(sensor['sensor_index'])]
+            if node_id:
+                node_id = node_id[0]
+            else:
+                node_id = create_node(node={"uid": sensor['sensor_index'], 'owner': OWNER_ID, 'location': location})
+            pa_sensor = get_purple_air_sensor(sensor['sensor_index'])
 
-            # Create sensor-type
-            sensor_type = create_sensor_type(sensor['sensor_index'])
+            if  [pa_sensor['model'] in sensor_type.keys() for sensor_type in sensor_types]:
+                sensor_type = [st.get(pa_sensor['model']) for st in sensor_types if st.get(pa_sensor['model'])][0]
+            else:
+                # Create sensor-type
+                sensor_type = create_sensor_type(pa_sensor)
+            # Create sensor
+            create_sensor({"node": node_id, "sensor_type": sensor_type})
 
 def get_purple_air_sensors():
     url = f"{PURPLE_AIR_API}/sensors?api_key={PURPLE_AIR_API_KEY}&fields=name,location_type,latitude,longitude,altitude,humidity,temperature,pressure,voc,ozone1,analog_input"
@@ -56,9 +66,9 @@ def get_purple_air_sensors():
     return response
 
 def get_sensors_africa_nodes():
-    response = requests.get(f"{SENSORS_AFRICA_API}/nodes/")
+    response = requests.get(f"{SENSORS_AFRICA_API}/nodes-all/")
     if response.ok:
-        return [res['node']['uid'] for res in response.json()]
+        return response.json()
     return []
 
 def get_sensors_africa_locations():
@@ -74,6 +84,13 @@ def get_sensors_africa_locations():
         return formated_response
     return []
 
+def get_sensors_africa_sensor_types():
+    response = requests.get(f"{SENSORS_AFRICA_API}/sensor-types/",
+        headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
+    if response.ok:
+        return [{f"{sensor_type['uid']}": sensor_type['id']} for sensor_type in response.json()]
+    return []
+
 def get_purple_air_sensor(sensor_id):
     url = f"{PURPLE_AIR_API}/sensors/{sensor_id}?api_key={PURPLE_AIR_API_KEY}"
     response = requests.get(url)
@@ -84,6 +101,8 @@ def create_node(node):
     response = requests.post(f"{SENSORS_AFRICA_API}/nodes/",
     data=node,
     headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
+    if response.ok:
+        return response.json()['id']
 
 def create_location(location):
     response = requests.post(f"{SENSORS_AFRICA_API}/locations/",
@@ -94,8 +113,7 @@ def create_location(location):
     else:
         raise Exception(response.json())
 
-def create_sensor_type(sensor_id):
-    sensor = get_purple_air_sensor(sensor_id)
+def create_sensor_type(sensor):
     if sensor:
         data = {"uid": sensor['model'], "name": sensor['model'], "manufacturer": "Purple Air"}
         response = requests.post(f"{SENSORS_AFRICA_API}/sensor-types/",
@@ -103,3 +121,9 @@ def create_sensor_type(sensor_id):
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
         if response.ok:
             return response.json()['id']
+
+def create_sensor(sensor):
+    response = requests.post(f"{SENSORS_AFRICA_API}/sensors/",
+                data=sensor,
+                headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
+
