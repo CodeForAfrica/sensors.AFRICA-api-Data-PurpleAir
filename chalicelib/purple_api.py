@@ -1,4 +1,5 @@
 import requests
+import json
 from .settings import (PURPLE_AIR_API, PURPLE_AIR_API_KEY,
                         SENSORS_AFRICA_API, SENSORS_AFRICA_API_KEY, 
                         OWNER_ID, )
@@ -59,6 +60,10 @@ def run():
                 sensor_type = create_sensor_type(pa_sensor)
             # Create sensor
             create_sensor({"node": node_id, "sensor_type": sensor_type})
+            
+            # Send sensor Data
+            send_sensor_data(sensor['sensor_index'], pa_sensor)
+
 
 def get_purple_air_sensors():
     url = f"{PURPLE_AIR_API}/sensors?api_key={PURPLE_AIR_API_KEY}&fields=name,location_type,latitude,longitude,altitude,humidity,temperature,pressure,voc,ozone1,analog_input"
@@ -126,4 +131,35 @@ def create_sensor(sensor):
     response = requests.post(f"{SENSORS_AFRICA_API}/sensors/",
                 data=sensor,
                 headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"})
+    if response.ok:
+        return response.json()['id']
+    else:
+        # If failure is because sensor already exists, find the sensor and get the sensor ID
+        return -1
 
+def send_sensor_data(sensor_id, sensor_data):
+    data = {
+	"sensordatavalues": [{
+		"value": sensor_data['humidity_a'],
+		"value_type": "humidity"
+        }, {
+		"value": sensor_data['temperature_a'],
+		"value_type": "temperature"
+        }, { 
+        "value": sensor_data['pressure_a'],
+		"value_type": "pressure"
+        }, {
+        "value": sensor_data['pm1.0_a'],
+		"value_type": "P1"
+        }, {
+        "value": sensor_data['pm2.5_a'],
+		"value_type": "P2"
+        }, {
+        "value": sensor_data['pm10.0_a'],
+		"value_type": "P10"
+        },
+    ]
+    }
+
+    response = requests.post(f"{SENSORS_AFRICA_API}/push-sensor-data/", json=data, headers={"SENSOR": str(sensor_id)})
+    
