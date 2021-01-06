@@ -1,14 +1,15 @@
 from chalice import Chalice
-from chalicelib import purple_api, settings
+from chalicelib import service
 
 
-app = Chalice(app_name='sensors-africa-purpleair')
+app = Chalice(app_name="sensors-africa-purpleair")
 
 
-@app.route('/')
+@app.route("/")
 def index():
-    return {'hello': 'world'}
+    return {"hello": "world"}
 
-@app.route('/sensors')
+
+@app.route("/sensors")
 def sensors():
-    return purple_api.run()
+    return service.run()
