@@ -33,8 +33,8 @@ def run():
             sensor_data = get_purple_air_sensor(sensor)
         except Exception:
             continue
-        if sensor_data["sensor_index"] not in [
-            node["node"]["uid"] for node in nodes if node
+        if str(sensor_data["sensor_index"]) not in [
+            node["uid"] for node in nodes if node
         ]:
             lat_log = f"{round(sensor_data['latitude'], 3)},\
                         {round(sensor_data['longitude'], 3)}"
@@ -68,13 +68,14 @@ def run():
             )
         else:
             node_id = [
-                node["node"]["id"]
+                node["id"]
                 for node in nodes
-                if node["node"]["uid"] == sensor_data["sensor_index"]
+                if node["uid"] == str(sensor_data["sensor_index"])
             ]
+            if node_id:
+                node_id = node_id[0]
 
         if not node_id:
-            # The node already exists but doesn't have data.
             # This should not happen
             continue
 
