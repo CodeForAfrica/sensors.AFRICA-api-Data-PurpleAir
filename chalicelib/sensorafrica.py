@@ -3,12 +3,16 @@ from .settings import (
     PURPLE_AIR_API,
     PURPLE_AIR_API_KEY,
     SENSORS_AFRICA_API,
-    SENSORS_AFRICA_API_KEY
+    SENSORS_AFRICA_API_KEY,
 )
 
 
 def get_sensors_africa_nodes():
-    response = requests.get(f"{SENSORS_AFRICA_API}/nodes/")
+    response = requests.get(
+        f"{SENSORS_AFRICA_API}/v1/node/",
+        headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
+    )
+
     if response.ok:
         return response.json()
     return []
@@ -16,7 +20,7 @@ def get_sensors_africa_nodes():
 
 def get_sensors_africa_locations():
     response = requests.get(
-        f"{SENSORS_AFRICA_API}/locations/",
+        f"{SENSORS_AFRICA_API}/v2/locations/",
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
     if response.ok:
@@ -40,7 +44,7 @@ def get_sensors_africa_locations():
 
 def get_sensors_africa_sensor_types():
     response = requests.get(
-        f"{SENSORS_AFRICA_API}/sensor-types/",
+        f"{SENSORS_AFRICA_API}/v2/sensor-types/",
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
     if response.ok:
@@ -61,7 +65,7 @@ def get_purple_air_sensor(sensor_id):
 
 def create_node(node):
     response = requests.post(
-        f"{SENSORS_AFRICA_API}/nodes/",
+        f"{SENSORS_AFRICA_API}/v2/nodes/",
         data=node,
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
@@ -71,7 +75,7 @@ def create_node(node):
 
 def create_location(location):
     response = requests.post(
-        f"{SENSORS_AFRICA_API}/locations/",
+        f"{SENSORS_AFRICA_API}/v2/locations/",
         data=location,
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
@@ -89,7 +93,7 @@ def create_sensor_type(sensor):
             "manufacturer": "Purple Air",
         }
         response = requests.post(
-            f"{SENSORS_AFRICA_API}/sensor-types/",
+            f"{SENSORS_AFRICA_API}/v2/sensor-types/",
             data=data,
             headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
         )
@@ -99,7 +103,7 @@ def create_sensor_type(sensor):
 
 def create_sensor(sensor):
     response = requests.post(
-        f"{SENSORS_AFRICA_API}/sensors/",
+        f"{SENSORS_AFRICA_API}/v2/sensors/",
         data=sensor,
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
@@ -122,9 +126,9 @@ def send_sensor_data(sensor_id, sensor_data):
             {"value": sensor_data["pm10.0_a"], "value_type": "P10"},
         ]
     }
-    SENSORS_AFRICA_API_V1 = SENSORS_AFRICA_API.replace("v2", "v1")
+
     response = requests.post(
-        f"{SENSORS_AFRICA_API_V1}/push-sensor-data/",
+        f"{SENSORS_AFRICA_API}/v1/push-sensor-data/",
         json=data,
         headers={
             "SENSOR": str(sensor_id),
