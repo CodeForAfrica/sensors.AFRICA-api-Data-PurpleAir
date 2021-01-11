@@ -82,7 +82,7 @@ def create_location(location):
     if response.ok:
         return response.json()["id"]
     else:
-        raise Exception(response.json())
+        raise Exception(response.text)
 
 
 def create_sensor_type(sensor):
