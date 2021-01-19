@@ -36,8 +36,7 @@ def run():
         if str(sensor_data["sensor_index"]) not in [
             node["uid"] for node in nodes if node
         ]:
-            lat_log = f"{round(sensor_data['latitude'], 3)},\
-                        {round(sensor_data['longitude'], 3)}"
+            lat_log = f"{round(sensor_data['latitude'], 3)}, {round(sensor_data['longitude'], 3)}"
             address = address_converter(lat_log)
 
             location = [loc.get(lat_log) for loc in locations if loc.get(lat_log)]
@@ -83,6 +82,7 @@ def run():
             if [
                 sensor_data["model"] in sensor_type.keys()
                 for sensor_type in sensor_types
+                if (sensor_data["model"] in sensor_type.keys())
             ][0]:
                 sensor_type = [
                     st.get(sensor_data["model"])

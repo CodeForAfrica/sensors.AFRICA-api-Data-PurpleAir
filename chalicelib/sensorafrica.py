@@ -23,6 +23,8 @@ def get_sensors_africa_locations():
         f"{SENSORS_AFRICA_API}/v2/locations/",
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
+    locations = []
+
     if response.ok:
         """
         Using latitude, longitude as a key and location id as value to help us
@@ -30,16 +32,14 @@ def get_sensors_africa_locations():
         Using round ensures latitude, longitude value will be the same as
         lat_log in the run method.
         """
-        formated_response = [
-            {
-                f"{round(float(location['latitude']), 3)},\
-                    {round(float(location['longitude']), 3)}": f"{location['id']}"
+        for location in response.json():
+            loc = {
+                f"{round(float(location['latitude']), 3)}, {round(float(location['longitude']), 3)}": f"{location['id']}"
             }
-            for location in response.json()
-        ]
+            # loc = f"{round(float(location['latitude']), 3)}, {round(float(location['longitude']), 3)}": f"{location['id']}"
+            locations.append(loc)
 
-        return formated_response
-    return []
+    return locations
 
 
 def get_sensors_africa_sensor_types():
