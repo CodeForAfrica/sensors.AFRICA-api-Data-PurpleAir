@@ -9,10 +9,9 @@ from .settings import (
 
 def get_sensors_africa_nodes():
     response = requests.get(
-        f"{SENSORS_AFRICA_API}/v1/node/",
+        f"{SENSORS_AFRICA_API}/v2/nodes/",
         headers={"Authorization": f"Token {SENSORS_AFRICA_API_KEY}"},
     )
-
     if response.ok:
         return response.json()
     return []
@@ -111,22 +110,26 @@ def create_sensor(sensor):
         return response.json()["id"]
     else:
         # If failure is because sensor already exists,
-        # find the sensor and get the sensor ID
         return -1
 
 
-def send_sensor_data(sensor_id, sensor_data):
-    data = {
-        "sensordatavalues": [
-            {"value": sensor_data["humidity_a"], "value_type": "humidity"},
+def send_sensor_data(sensor_id, sensor_data, timestamp=None):
+    sensordatavalues = [
+        {"value": sensor_data["humidity_a"], "value_type": "humidity"},
             {"value": sensor_data["temperature_a"], "value_type": "temperature"},
-            {"value": sensor_data["pressure_a"], "value_type": "pressure"},
             {"value": sensor_data["pm1.0_a"], "value_type": "P1"},
             {"value": sensor_data["pm2.5_a"], "value_type": "P2"},
             {"value": sensor_data["pm10.0_a"], "value_type": "P10"},
-        ]
-    }
+    ]
+    if sensor_data["pressure_a"]:
+        sensordatavalues.append({"value": sensor_data["pressure_a"], "value_type": "pressure"})
 
+    data = {
+        "sensordatavalues": sensordatavalues,
+        "timestamp": timestamp
+    }
+    if not timestamp:
+        del data['timestamp']
     response = requests.post(
         f"{SENSORS_AFRICA_API}/v1/push-sensor-data/",
         json=data,

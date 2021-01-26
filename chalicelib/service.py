@@ -34,7 +34,7 @@ def run():
         except Exception:
             continue
         if str(sensor_data["sensor_index"]) not in [
-            node["uid"] for node in nodes if node
+            node["node"]["uid"] for node in nodes if node["node"]
         ]:
             lat_log = f"{round(sensor_data['latitude'], 3)}, {round(sensor_data['longitude'], 3)}"
             address = address_converter(lat_log)
@@ -67,9 +67,9 @@ def run():
             )
         else:
             node_id = [
-                node["id"]
+                node["node"]["id"]
                 for node in nodes
-                if node["uid"] == str(sensor_data["sensor_index"])
+                if node["node"]["uid"] == str(sensor_data["sensor_index"])
             ]
             if node_id:
                 node_id = node_id[0]
