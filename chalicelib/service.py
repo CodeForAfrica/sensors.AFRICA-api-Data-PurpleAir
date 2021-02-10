@@ -99,4 +99,4 @@ def run():
         create_sensor({"node": node_id, "sensor_type": sensor_type})
 
         # Send sensor Data
-        send_sensor_data(sensor_data["sensor_index"], sensor_data)
+        send_sensor_data(sensor_data["sensor_index"], sensor_data, timestamp=sensor_data["last_seen"])

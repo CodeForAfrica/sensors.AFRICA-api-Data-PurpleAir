@@ -1,4 +1,6 @@
 import requests
+from datetime import datetime, timezone
+    
 from .settings import (
     PURPLE_AIR_API,
     PURPLE_AIR_API_KEY,
@@ -113,7 +115,9 @@ def create_sensor(sensor):
         return -1
 
 
-def send_sensor_data(sensor_id, sensor_data, timestamp=None):
+def send_sensor_data(sensor_id, sensor_data, timestamp):
+    timestamp = datetime.fromtimestamp(timestamp, timezone.utc).isoformat('T', 'microseconds')
+    
     sensordatavalues = [
         {"value": sensor_data["humidity_a"], "value_type": "humidity"},
             {"value": sensor_data["temperature_a"], "value_type": "temperature"},
