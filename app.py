@@ -1,29 +1,19 @@
-from chalice import Chalice
+import sentry_sdk
 
-app = Chalice(app_name='sensors-africa-purpleair')
+from chalice import Chalice, Rate
+from chalicelib import service
+from chalicelib.settings import SCHEDULE_RATE, SENTRY_DSN
 
+from sentry_sdk.integrations.chalice import ChaliceIntegration
 
-@app.route('/')
-def index():
-    return {'hello': 'world'}
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    integrations=[ChaliceIntegration()],
+    traces_sample_rate=0.5
+)
 
+app = Chalice(app_name="sensors-africa-purpleair")
 
-# The view function above will return {"hello": "world"}
-# whenever you make an HTTP GET request to '/'.
-#
-# Here are a few more examples:
-#
-# @app.route('/hello/{name}')
-# def hello_name(name):
-#    # '/hello/james' -> {"hello": "james"}
-#    return {'hello': name}
-#
-# @app.route('/users', methods=['POST'])
-# def create_user():
-#     # This is the JSON body the user sent in their POST request.
-#     user_as_json = app.current_request.json_body
-#     # We'll echo the json body back to the user in a 'user' key.
-#     return {'user': user_as_json}
-#
-# See the README documentation for more examples.
-#
+@app.schedule(Rate(int(SCHEDULE_RATE), unit=Rate.MINUTES))
+def scheduled(event):
+    return service.run()

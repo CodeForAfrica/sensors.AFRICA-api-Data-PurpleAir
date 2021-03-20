@@ -1,0 +1,4 @@
+requests==2.25.0
+python-dotenv==0.15.0
+geopy==2.0.0
+sentry-sdk==0.19.5
